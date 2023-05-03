@@ -78,12 +78,11 @@ def gen_atom_selection_str(top_name, node):
     # Residue level interactions
     if len(node_info) == 3:
         chain, resn, resi = node_info
-        selection_str = "%s and chain %s and resn %s and resi %s and name CA" % (top_name, chain, resn, resi)
+        selection_str = f"{top_name} and chain {chain} and resn {resn} and resi {resi} and name CA"
 
-    # Atomic level interactions
     elif len(node_info) == 4:
         chain, resn, resi, name = node_info
-        selection_str = "%s and chain %s and resn %s and resi %s and name %s" % (top_name, chain, resn, resi, name)
+        selection_str = f"{top_name} and chain {chain} and resn {resn} and resi {resi} and name {name}"
 
     return selection_str
 
@@ -105,8 +104,7 @@ def get_line_thickness(weight):
     min_width = 0.01
     max_width = 0.5
     radius = float(weight)*max_width
-    if radius < min_width:
-        radius = min_width
+    radius = max(radius, min_width)
     return radius
 
 
@@ -126,7 +124,7 @@ def draw_edge(top_name, node1, node2, weight):
         Edge between between node1 and node2
     """
 
-    label = "%s_contact_network" % top_name
+    label = f"{top_name}_contact_network"
     sel1 = gen_atom_selection_str(top_name, node1)
     sel2 = gen_atom_selection_str(top_name, node2)
 
@@ -138,10 +136,13 @@ def draw_edge(top_name, node1, node2, weight):
     r1, g1, b1 = 0.5, 0.5, 0.5  # color (red)
     r2, g2, b2 = 0.5, 0.5, 0.5  # color (red)
     radius = get_line_thickness(weight)
-    cmd.load_cgo([9.0, x1, y1, z1, x2, y2, z2, radius, r1, g1, b1, r2, g2, b2], "cylinder_%s_%s" % (node1, node2))
+    cmd.load_cgo(
+        [9.0, x1, y1, z1, x2, y2, z2, radius, r1, g1, b1, r2, g2, b2],
+        f"cylinder_{node1}_{node2}",
+    )
 
-    cmd.do("show spheres, %s" % sel1)
-    cmd.do("show spheres, %s" % sel2)
+    cmd.do(f"show spheres, {sel1}")
+    cmd.do(f"show spheres, {sel2}")
 
 
 def visualize_protein_network(structure, edge_weights, sub_network=[], cutoff=0.0):

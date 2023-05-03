@@ -66,10 +66,10 @@ def main(argv=None):
         a1_match = bridge_pattern.match(contact[2])
         a2_match = bridge_pattern.match(contact[3])
         if a1_match and not a2_match:
-            a1_res = ":".join(contact[2].split(":")[0:3])
+            a1_res = ":".join(contact[2].split(":")[:3])
             bridge_neighbors[frame][a1_res].append(contact[3])
         elif a2_match:
-            a2_res = ":".join(contact[3].split(":")[0:3])
+            a2_res = ":".join(contact[3].split(":")[:3])
             bridge_neighbors[frame][a2_res].append(contact[2])
         elif not bridges_only:
             bridged_contacts.append(contact)
@@ -77,9 +77,10 @@ def main(argv=None):
     # Based on the neighbor-lists in `bridge_neighbors`, add atom pairs to `bridged_contacts`
     for frame, bridge_map in enumerate(bridge_neighbors):
         for bridge_res in bridge_map:
-            for a1, a2 in combinations(bridge_map[bridge_res], 2):
-                bridged_contacts.append([frame, 'br', a1, a2, bridge_res])
-
+            bridged_contacts.extend(
+                [frame, 'br', a1, a2, bridge_res]
+                for a1, a2 in combinations(bridge_map[bridge_res], 2)
+            )
     # Sort the contacts and convert them to strings
     from operator import itemgetter
     bridged_contacts.sort(key=itemgetter(0))
@@ -92,7 +93,7 @@ def main(argv=None):
         args.output.write("# total_frames:%d\n" % total_frames)
         args.output.write("\n".join(bridged_contacts))
         args.output.close()
-        print("Wrote residue contact file to " + args.output.name)
+        print(f"Wrote residue contact file to {args.output.name}")
     else:
         print("\n".join(bridged_contacts))
 

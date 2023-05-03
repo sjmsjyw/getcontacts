@@ -14,7 +14,7 @@ class Aligned_Residues:
         if include_nonaligned:
             self.to_print = True
         else:
-            self.to_print = sum([bool(resname) for resname in resnames]) > 1
+            self.to_print = sum(bool(resname) for resname in resnames) > 1
         print(self.to_print)
         self.generic = "-".join(resnames)
         self.protein_map = {
@@ -25,12 +25,12 @@ class Aligned_Residues:
     def get_line(self, protein):
         if not self.to_print or not self.protein_map[protein]["to_print"]:
             return ""
-        line = "{}\t{}".format(self.protein_map[protein]["resname"], self.generic)
+        line = f'{self.protein_map[protein]["resname"]}\t{self.generic}'
         if (
             self.protein_map[protein]["ss"]
             and self.protein_map[protein]["ss"] in self.ss_colormap
         ):
-            line += "\t{}".format(self.ss_colormap[self.protein_map[protein]["ss"]])
+            line += f'\t{self.ss_colormap[self.protein_map[protein]["ss"]]}'
         line += "\n"
         return line
 
@@ -38,7 +38,7 @@ class Aligned_Residues:
 def parse_two_queries(gesamt_lines, include_nonaligned, proteins=None):
     if proteins is None:
         proteins = []
-        for idx, line in enumerate(gesamt_lines):
+        for line in gesamt_lines:
             if (
                 "reading QUERY structure" in line
                 or "reading TARGET structure" in line
@@ -62,10 +62,9 @@ def parse_two_queries(gesamt_lines, include_nonaligned, proteins=None):
                 and ("Target" in line_tokens or "MOVING" in line_tokens)
             ):
                 alignment_start_idx = idx + 2
-        else:
-            if "'" in line:
-                alignment_end_idx = idx
-                break
+        elif "'" in line:
+            alignment_end_idx = idx
+            break
 
     # grab all lines in the file belonging to the alignment
     alignment_lines = gesamt_lines[alignment_start_idx:alignment_end_idx]
@@ -80,9 +79,7 @@ def parse_two_queries(gesamt_lines, include_nonaligned, proteins=None):
     for line in alignment_lines:
         new_line = []
         for protein, token in zip(proteins, line):
-            resname = (
-                token[-10:-5] + ":" + str(int(token[-5:])) if token.strip() else ""
-            )
+            resname = f"{token[-10:-5]}:{int(token[-5:])}" if token.strip() else ""
             ss = token[0].strip()
             new_line.append((protein, ss, resname))
         print(new_line)
@@ -94,7 +91,7 @@ def parse_two_queries(gesamt_lines, include_nonaligned, proteins=None):
 def parse_more_than_two_queries(gesamt_lines, include_nonaligned, proteins=None):
     if proteins is None:
         proteins = []
-        for idx, line in enumerate(gesamt_lines):
+        for line in gesamt_lines:
             if "... reading file" in line:
                 protein_filename = line.split("'")[1]
                 protein, _ = os.path.splitext(protein_filename)
@@ -107,10 +104,9 @@ def parse_more_than_two_queries(gesamt_lines, include_nonaligned, proteins=None)
             line_tokens = [token.strip() for token in line.split("|")]
             if "Disp." in line_tokens:
                 alignment_start_idx = idx + 2
-        else:
-            if "'" in line:
-                alignment_end_idx = idx
-                break
+        elif "'" in line:
+            alignment_end_idx = idx
+            break
 
     # grab all lines in the file belonging to the alignment
     alignment_lines = gesamt_lines[alignment_start_idx:alignment_end_idx]
@@ -133,7 +129,7 @@ def parse_more_than_two_queries(gesamt_lines, include_nonaligned, proteins=None)
                 resname = token
             elif len(token.split("|")) == 2:
                 ss, resname = token.split("|")
-            resname = resname[:5] + ":" + str(int(resname[5:])) if resname else ""
+            resname = f"{resname[:5]}:{int(resname[5:])}" if resname else ""
             new_line.append((protein, ss, resname))
         print(new_line)
         aligned_residues.append(Aligned_Residues(new_line))
@@ -197,11 +193,11 @@ def main(argv=None):
             gesamt_lines, include_nonaligned, proteins=proteins
         )
 
-    os.system("mkdir -p {}".format(output_path))
+    os.system(f"mkdir -p {output_path}")
 
     for protein in proteins:
         # write output file
-        with open("{}/{}.label".format(output_path, protein), "w+") as w_open:
+        with open(f"{output_path}/{protein}.label", "w+") as w_open:
             for residue_set in aligned_residues:
                 w_open.write(residue_set.get_line(protein))
 

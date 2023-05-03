@@ -31,7 +31,9 @@ class Atom:
         if self.element in vdw_radii:
             self.vdwradius = vdw_radii[self.element]
         else:
-            sys.stderr.write("WARNING: Doesn't know van der Waals radius of "+self.element+". Defaulting to 1.7")
+            sys.stderr.write(
+                f"WARNING: Doesn't know van der Waals radius of {self.element}. Defaulting to 1.7"
+            )
             self.vdwradius = 1.7
 
     def is_bb(self):
@@ -75,36 +77,32 @@ def infer_element(resname, name):
     name_letters = re.search(r'[a-zA-Z]+', name).group(0)  # Only retain first word: "1HH2" -> "HH", "1H2S" -> "H"
     name_letters = name_letters.upper()
     if len(name_letters) == 0:
-        sys.stderr.write("WARNING: Element can't be determined for atom '" + name + "'")
+        sys.stderr.write(f"WARNING: Element can't be determined for atom '{name}'")
         return "?"
 
     # Single letter atom_name identifies element
     if len(name_letters) == 1:
         if name_letters in element_names:
             return name_letters
-        else:
-            sys.stderr.write("WARNING: Element can't be determined for atom '" + name + "'")
-            return "?"
+        sys.stderr.write(f"WARNING: Element can't be determined for atom '{name}'")
+        return "?"
 
     elem_1ch = name_letters[0]
-    elem_2ch = name_letters[0:2]
-    if elem_1ch in element_names and elem_2ch in element_names:
-        ret = elem_2ch if resname == name else elem_1ch
-        # sys.stderr.write("WARNING: Ambiguous element of atom '" + name + "'. Assuming '" + ret + "'\n")
-        return ret
-
+    elem_2ch = name_letters[:2]
     if elem_1ch in element_names:
+        if elem_2ch in element_names:
+            return elem_2ch if resname == name else elem_1ch
         return elem_1ch
 
     if elem_2ch in element_names:
         return elem_2ch
 
-    sys.stderr.write("WARNING: Element can't be determined for atom '" + name + "'")
+    sys.stderr.write(f"WARNING: Element can't be determined for atom '{name}'")
     return "?"
 
 
 # Atom names of back-bone atoms
-bb_names = set(["O", "N", "OP1", "OP2", "O1P", "O2P", "O3'", "O2'", "O4'", "O5'"])
+bb_names = {"O", "N", "OP1", "OP2", "O1P", "O2P", "O3'", "O2'", "O4'", "O5'"}
 
 # https://en.wikipedia.org/wiki/Atomic_radii_of_the_elements_(data_page)
 # https://www.webelements.com/gadolinium/

@@ -25,12 +25,27 @@ class TestGetStaticContacts(unittest.TestCase):
             self.assertEqual(lines[2][0], "0")
 
             # Check that the correct interaction types are present
-            itypes = set([l.split()[1] for l in lines[2:]])
-            self.assertEqual(itypes, set(["hbbb", "hbsb", "hbss", "hp", "lwb", "lwb2", "ps", "sb", "vdw", "wb", "wb2"]))
+            itypes = {l.split()[1] for l in lines[2:]}
+            self.assertEqual(
+                itypes,
+                {
+                    "hbbb",
+                    "hbsb",
+                    "hbss",
+                    "hp",
+                    "lwb",
+                    "lwb2",
+                    "ps",
+                    "sb",
+                    "vdw",
+                    "wb",
+                    "wb2",
+                },
+            )
 
             # Check that all interactions span chain A and B
-            chain_pairs = set([(l.split()[2][0], l.split()[3][0]) for l in lines[2:]])
-            self.assertEqual(chain_pairs, set([("A", "B")]))
+            chain_pairs = {(l.split()[2][0], l.split()[3][0]) for l in lines[2:]}
+            self.assertEqual(chain_pairs, {("A", "B")})
 
             # Check that there are no duplicate interactions, even if atom pairs are swapped
             contact_hashes = set()

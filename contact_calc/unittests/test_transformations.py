@@ -17,10 +17,10 @@ class TestTransformations(unittest.TestCase):
         ]
 
     def test_parse_contacts(self):
-        contacts, num_frames = ct.parse_contacts(self.input_lines, set(['sb']))
+        contacts, num_frames = ct.parse_contacts(self.input_lines, {'sb'})
         self.assertEqual(len(contacts), 3)
         self.assertEqual(num_frames, 2)
-        self.assertTrue(all([c[1] == 'sb' for c in contacts]))
+        self.assertTrue(all(c[1] == 'sb' for c in contacts))
         self.assertEqual(type(contacts[0][0]), int)
         self.assertEqual(type(contacts[0][1]), str)
         self.assertEqual(type(contacts[0][2]), str)
@@ -30,7 +30,7 @@ class TestTransformations(unittest.TestCase):
         pass
 
     def test_res_contacts(self):
-        contacts, num_frames = ct.parse_contacts(self.input_lines, set(['sb']))
+        contacts, num_frames = ct.parse_contacts(self.input_lines, {'sb'})
         rcontacts = ct.res_contacts(contacts)
         self.assertEqual(len(rcontacts), 2)
         self.assertEqual(rcontacts[0][0], 0)

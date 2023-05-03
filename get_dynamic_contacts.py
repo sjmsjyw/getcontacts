@@ -21,7 +21,7 @@ from contact_calc.compute_contacts import *
 
 
 def process_geometric_criterion_args(args):
-    geom_criterion_values = {
+    return {
         "SALT_BRIDGE_CUTOFF_DISTANCE": args.sb_cutoff_dist,
         "PI_CATION_CUTOFF_DISTANCE": args.pc_cutoff_dist,
         "PI_CATION_CUTOFF_ANGLE": args.pc_cutoff_ang,
@@ -35,9 +35,8 @@ def process_geometric_criterion_args(args):
         "HBOND_CUTOFF_ANGLE": args.hbond_cutoff_ang,
         "HBOND_RES_DIFF": args.hbond_res_diff,
         "VDW_EPSILON": args.vdw_epsilon,
-        "VDW_RES_DIFF": args.vdw_res_diff
+        "VDW_RES_DIFF": args.vdw_res_diff,
     }
-    return geom_criterion_values
 
 
 def main(argv=None):
@@ -71,7 +70,7 @@ def main(argv=None):
     else:
         for itype in args.itypes:
             if itype not in all_itypes:
-                parser.error(itype + " is not a valid interaction type")
+                parser.error(f"{itype} is not a valid interaction type")
 
         itypes = args.itypes
 
@@ -83,14 +82,14 @@ def main(argv=None):
     total_time = (toc-tic).total_seconds()
     print("\nTotal computation time:", total_time, "seconds")
 
-    print("topology=%s" % top)
-    print("trajectory=%s" % traj)
-    print("output=%s" % output)
-    print("cores=%s" % cores)
-    print("solv=%s" % solv)
-    print("sele=%s" % sele1)
-    print("sele2=%s" % sele2)
-    print("stride=%s" % stride)
+    print(f"topology={top}")
+    print(f"trajectory={traj}")
+    print(f"output={output}")
+    print(f"cores={cores}")
+    print(f"solv={solv}")
+    print(f"sele={sele1}")
+    print(f"sele2={sele2}")
+    print(f"stride={stride}")
 
 
 if __name__ == "__main__":

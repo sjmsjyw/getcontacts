@@ -62,10 +62,7 @@ def filter_dual_selection_aromatic(sele1_atoms, sele2_atoms, aromatic1_index, ar
     if (aromatic1_index in sele1_atoms) and (aromatic2_index in sele2_atoms):
         return False
 
-    if (aromatic1_index in sele2_atoms) and (aromatic2_index in sele1_atoms):
-        return False
-
-    return True
+    return aromatic1_index not in sele2_atoms or aromatic2_index not in sele1_atoms
 
 
 def get_aromatic_triplet(molid, frame, aatom, index_to_atom):
@@ -102,15 +99,16 @@ def get_aromatic_triplet(molid, frame, aatom, index_to_atom):
     }
     chain, resname, resid = aatom.chain, aatom.resname, aatom.resid
     # Use the dict above and assume nucleic acid if residue name is not present
-    arom_triple = residue_to_atom_names[resname] if resname in residue_to_atom_names else "C2 C4 C6"
+    arom_triple = residue_to_atom_names.get(resname, "C2 C4 C6")
     evaltcl("set aromatic_atoms [atomselect %s \"(chain '%s') and (resname '%s') and (resid '%s') and (name %s)\" frame %s]"
             % (molid, chain, resname, resid, arom_triple, frame))
     aromatic_atom_triplet_indices = get_atom_selection_indices("aromatic_atoms")
     evaltcl('$aromatic_atoms delete')
 
-    # Need aromatic_atom_triplet as list 
-    aromatic_atom_triplet_labels = [index_to_atom[atom_index].get_label() for atom_index in aromatic_atom_triplet_indices]
-    return aromatic_atom_triplet_labels
+    return [
+        index_to_atom[atom_index].get_label()
+        for atom_index in aromatic_atom_triplet_indices
+    ]
 
 
 def compute_aromatics(molid, frame, index_to_atom, sele1, sele2, sele1_atoms, sele2_atoms, itype,
@@ -153,7 +151,7 @@ def compute_aromatics(molid, frame, index_to_atom, sele1, sele2, sele1_atoms, se
 
     aromatics = []
 
-    sele_union = "(%s) or (%s)" % (sele1, sele2)
+    sele_union = f"({sele1}) or ({sele2})"
     aromatic_atom_sel = "set aromatic_atoms [atomselect %s \" ((%s) or (%s) or (%s) or (%s) or (%s)) and (%s) \" frame %s]" % \
                         (molid, aromatic_phe, aromatic_trp, aromatic_tyr, aromatic_his, aromatic_nucl, sele_union, frame)
     # aromatic_atom_sel = "set aromatic_atoms [atomselect %s \"" \
@@ -163,7 +161,7 @@ def compute_aromatics(molid, frame, index_to_atom, sele1, sele2, sele1_atoms, se
     #                     (molid, sele_union, sele_union, sele_union, frame)
 
     evaltcl(aromatic_atom_sel)
-    contacts = evaltcl("measure contacts %s $aromatic_atoms" % soft_distance_cutoff)
+    contacts = evaltcl(f"measure contacts {soft_distance_cutoff} $aromatic_atoms")
     evaltcl("$aromatic_atoms delete")
 
     # Calculate set of distinct aromatic candidate pairs that may have pi-stacking
@@ -173,16 +171,21 @@ def compute_aromatics(molid, frame, index_to_atom, sele1, sele2, sele1_atoms, se
     for aromatic1_index, aromatic2_index in contact_index_pairs:
 
         # Perform dual selection with integer indices
-        if sele1_atoms is not None and sele2_atoms is not None:
-            if filter_dual_selection_aromatic(sele1_atoms, sele2_atoms, aromatic1_index, aromatic2_index):
-                continue 
+        if (
+            sele1_atoms is not None
+            and sele2_atoms is not None
+            and filter_dual_selection_aromatic(
+                sele1_atoms, sele2_atoms, aromatic1_index, aromatic2_index
+            )
+        ):
+            continue 
 
         aromatic1_label = index_to_atom[aromatic1_index].get_label()
         aromatic2_label = index_to_atom[aromatic2_index].get_label()
 
         # Check if the two atoms belong to same aromatic group
-        aromatic1_res = ":".join(aromatic1_label.split(":")[0:3])
-        aromatic2_res = ":".join(aromatic2_label.split(":")[0:3])
+        aromatic1_res = ":".join(aromatic1_label.split(":")[:3])
+        aromatic2_res = ":".join(aromatic2_label.split(":")[:3])
         if aromatic1_res == aromatic2_res:
             continue
 
@@ -289,12 +292,20 @@ def compute_pi_stacking(traj_frag_molid, frame_idx, index_to_atom, sele1, sele2,
     cutoff_distance = geom_criteria['PI_STACK_CUTOFF_DISTANCE']
     cutoff_angle = geom_criteria['PI_STACK_CUTOFF_ANGLE']
     psi_angle = geom_criteria['PI_STACK_PSI_ANGLE']
-    pi_stacking = compute_aromatics(traj_frag_molid, frame_idx, index_to_atom,
-                                    sele1, sele2,
-                                    sele1_atoms, sele2_atoms, "ps",
-                                    PI_STACK_SOFT_DISTANCE_CUTOFF, cutoff_distance,
-                                    cutoff_angle, psi_angle)
-    return pi_stacking
+    return compute_aromatics(
+        traj_frag_molid,
+        frame_idx,
+        index_to_atom,
+        sele1,
+        sele2,
+        sele1_atoms,
+        sele2_atoms,
+        "ps",
+        PI_STACK_SOFT_DISTANCE_CUTOFF,
+        cutoff_distance,
+        cutoff_angle,
+        psi_angle,
+    )
 
 
 def compute_t_stacking(traj_frag_molid, frame_idx, index_to_atom, sele1, sele2, sele1_atoms, sele2_atoms,
@@ -330,11 +341,19 @@ def compute_t_stacking(traj_frag_molid, frame_idx, index_to_atom, sele1, sele2, 
     cutoff_angle = geom_criteria['T_STACK_CUTOFF_ANGLE']
     psi_angle = geom_criteria['T_STACK_PSI_ANGLE']
 
-    t_stacking = compute_aromatics(traj_frag_molid, frame_idx, index_to_atom,
-                                   sele1, sele2,
-                                   sele1_atoms, sele2_atoms, "ts",
-                                   T_STACK_SOFT_DISTANCE_CUTOFF, cutoff_distance,
-                                   cutoff_angle, psi_angle)
-    return t_stacking
+    return compute_aromatics(
+        traj_frag_molid,
+        frame_idx,
+        index_to_atom,
+        sele1,
+        sele2,
+        sele1_atoms,
+        sele2_atoms,
+        "ts",
+        T_STACK_SOFT_DISTANCE_CUTOFF,
+        cutoff_distance,
+        cutoff_angle,
+        psi_angle,
+    )
 
 

@@ -14,7 +14,7 @@ class TestGetContactTicc(unittest.TestCase):
         top_file = "tests/5xnd_topology.pdb"
         trj_file = "tests/5xnd_trajectory.dcd"
         contact_file = "tests/5xnd_contacts.tsv"
-        args = "--topology %s --trajectory %s --output %s --itypes all" % (top_file, trj_file, contact_file)
+        args = f"--topology {top_file} --trajectory {trj_file} --output {contact_file} --itypes all"
         get_dynamic_contacts.main(argv=args.split(" "))
         self.assertTrue(os.path.exists(contact_file))
 
@@ -23,7 +23,7 @@ class TestGetContactTicc(unittest.TestCase):
             "tests/5xnd_ticc"
         )
         args = "--input_contacts %s --clusters 2 --tab_output %s --frequency_output %s" % \
-               ((contact_file,) + ticc_output)
+                   ((contact_file,) + ticc_output)
         get_contact_ticc.main(argv=args.split(" "))
         ticc_output = (
             ticc_output[0],

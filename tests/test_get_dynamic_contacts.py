@@ -27,7 +27,7 @@ class TestGetDynamicContacts(unittest.TestCase):
             self.assertEqual(lines[2][0], "0")
 
             # Check that 20 frames total are generated
-            frames = set([int(l.split()[0]) for l in lines[2:]])
+            frames = {int(l.split()[0]) for l in lines[2:]}
             self.assertEqual(frames, set(range(20)))
 
             # Check that there are no duplicate interactions, even if atom pairs are swapped
@@ -38,7 +38,7 @@ class TestGetDynamicContacts(unittest.TestCase):
                 a2 = tokens[3]
                 if a2 < a1:
                     a1, a2 = a2, a1
-                chash = "\t".join(tokens[0:2] + [a1, a2])
+                chash = "\t".join(tokens[:2] + [a1, a2])
                 if chash in contact_hashes:
                     print(chash)
                 self.assertFalse(chash in contact_hashes)
@@ -70,8 +70,8 @@ class TestGetDynamicContacts(unittest.TestCase):
             self.assertEqual(lines[2][0], "1")
 
             # Check that 12 frames total are generated
-            frames = set([int(l.split()[0]) for l in lines[2:]])
-            self.assertEqual(frames, set([1, 2, 3, 4, 5, 8, 12, 13, 15, 16, 18, 19]))
+            frames = {int(l.split()[0]) for l in lines[2:]}
+            self.assertEqual(frames, {1, 2, 3, 4, 5, 8, 12, 13, 15, 16, 18, 19})
 
         os.remove(outfile)
 

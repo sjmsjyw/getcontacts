@@ -108,15 +108,12 @@ def build_getcontact_parser(program_description, trajectory):
     if trajectory:
         geometric_group.add_argument("--hbond_cutoff_ang", type=float, metavar="FLOAT", default=70,
                                      help="cutoff for angle between donor hydrogen acceptor [default = 70 degrees]")
-        geometric_group.add_argument("--hbond_res_diff", type=int, metavar="INT", default=1,
-                                     help="minimum residue distance for which to consider computing hbond interactions "
-                                          "[default = 1]")
     else:
         geometric_group.add_argument("--hbond_cutoff_ang", type=float, metavar="FLOAT", default=180,
                                      help="cutoff for angle between donor hydrogen acceptor [default = 180 degrees]")
-        geometric_group.add_argument("--hbond_res_diff", type=int, metavar="INT", default=1,
-                                     help="minimum residue distance for which to consider computing hbond interactions "
-                                          "[default = 1]")
+    geometric_group.add_argument("--hbond_res_diff", type=int, metavar="INT", default=1,
+                                 help="minimum residue distance for which to consider computing hbond interactions "
+                                      "[default = 1]")
     geometric_group.add_argument("--vdw_epsilon", type=float, metavar="FLOAT", default=0.5,
                                  help="amount of padding for calculating vanderwaals contacts "
                                       "[default = 0.5 angstroms]")

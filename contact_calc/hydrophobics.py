@@ -20,8 +20,8 @@ def prepare_indices(molid, index_to_atom, sele1, sele2, geom_criteria):
         evaltcl("$cneighbors delete")
         # print("neighbors of", c_idx, ":", c_neighbor_indices)
 
-        c_neighbor_elements = set([index_to_atom[n].element for n in c_neighbor_indices])
-        if c_neighbor_elements | set(["C", "H"]) == set(["C", "H"]):
+        c_neighbor_elements = {index_to_atom[n].element for n in c_neighbor_indices}
+        if c_neighbor_elements | {"C", "H"} == {"C", "H"}:
             sele1_hp_indices.append(str(c_idx))
     geom_criteria['sele1_hp_indices'] = " ".join(sele1_hp_indices)
 
@@ -35,8 +35,8 @@ def prepare_indices(molid, index_to_atom, sele1, sele2, geom_criteria):
         c_neighbor_indices = get_atom_selection_indices("cneighbors")
         evaltcl("$cneighbors delete")
 
-        c_neighbor_elements = set([index_to_atom[n].element for n in c_neighbor_indices])
-        if c_neighbor_elements == set(["C", "H"]):
+        c_neighbor_elements = {index_to_atom[n].element for n in c_neighbor_indices}
+        if c_neighbor_elements == {"C", "H"}:
             sele2_hp_indices.append(str(c_idx))
     geom_criteria['sele2_hp_indices'] = " ".join(sele2_hp_indices)
 
@@ -80,12 +80,14 @@ def compute_hydrophobics(traj_frag_molid, frame_idx, index_to_atom, sele1, sele2
         contacts = ""
     elif sele1 == sele2:
         evaltcl("set hp_atoms [atomselect %s \"index %s\" frame %s]" % (traj_frag_molid, sele1_hp_indices, frame_idx))
-        contacts = evaltcl("measure contacts %s $hp_atoms" % (epsilon + 2 * 1.7))
+        contacts = evaltcl(f"measure contacts {epsilon + 2 * 1.7} $hp_atoms")
         evaltcl("$hp_atoms delete")
     else:
         evaltcl("set hp_atoms1 [atomselect %s \"index %s\" frame %s]" % (traj_frag_molid, sele1_hp_indices, frame_idx))
         evaltcl("set hp_atoms2 [atomselect %s \"index %s\" frame %s]" % (traj_frag_molid, sele2_hp_indices, frame_idx))
-        contacts = evaltcl("measure contacts %s $hp_atoms1 $hp_atoms2" % (epsilon + 2 * 1.7))
+        contacts = evaltcl(
+            f"measure contacts {epsilon + 2 * 1.7} $hp_atoms1 $hp_atoms2"
+        )
         evaltcl("$hp_atoms1 delete")
         evaltcl("$hp_atoms2 delete")
 
@@ -101,9 +103,11 @@ def compute_hydrophobics(traj_frag_molid, frame_idx, index_to_atom, sele1, sele2
             continue
 
         #Check and continue if disulphide bond
-        if atom1.resname == atom2.resname == "CYS":
-            if set((atom1.resid, atom2.resid)) in disulfide_cys:
-                continue
+        if (
+            atom1.resname == atom2.resname == "CYS"
+            and {atom1.resid, atom2.resid} in disulfide_cys
+        ):
+            continue
 
         # Perform distance cutoff with atom indices
         distance = compute_distance(traj_frag_molid, frame_idx, atom1_index, atom2_index)

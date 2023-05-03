@@ -72,14 +72,26 @@ def compute_hydrogen_bonds(molid, frame, index_to_atom, sele1, sele2,
     ligand_indices = get_selection_indices(molid, frame, "ligand")  # TODO: This can be sped up by not fetching selection indices at every frame
     solvent_atoms = get_selection_indices(molid, frame, "solv")  # TODO: This can be sped up by not fetching selection indices at every frame
 
-    sel_sel = extract_donor_acceptor(evaltcl("measure hbonds %s %s $selunion" % (cutoff_distance, cutoff_angle)))
+    sel_sel = extract_donor_acceptor(
+        evaltcl(f"measure hbonds {cutoff_distance} {cutoff_angle} $selunion")
+    )
     sel_sel = [(d, a) for (d, a) in sel_sel if filter_dual_selection(sele1_atoms, sele2_atoms, d, a)]
 
     sel_solv = set([])
-    sel_solv |= extract_donor_acceptor(evaltcl("measure hbonds %s %s $selunion $shell" % (cutoff_distance, cutoff_angle)))
-    sel_solv |= extract_donor_acceptor(evaltcl("measure hbonds %s %s $shell $selunion" % (cutoff_distance, cutoff_angle)))
+    sel_solv |= extract_donor_acceptor(
+        evaltcl(
+            f"measure hbonds {cutoff_distance} {cutoff_angle} $selunion $shell"
+        )
+    )
+    sel_solv |= extract_donor_acceptor(
+        evaltcl(
+            f"measure hbonds {cutoff_distance} {cutoff_angle} $shell $selunion"
+        )
+    )
 
-    solv_solv = extract_donor_acceptor(evaltcl("measure hbonds %s %s $shell" % (cutoff_distance, cutoff_angle)))
+    solv_solv = extract_donor_acceptor(
+        evaltcl(f"measure hbonds {cutoff_distance} {cutoff_angle} $shell")
+    )
     evaltcl("$selunion delete")
     evaltcl("$shell delete")
 
@@ -104,15 +116,9 @@ def compute_hydrogen_bonds(molid, frame, index_to_atom, sele1, sele2,
         if d_lig and a_lig:
             hb_type = "hbll"
         elif d_lig:
-            if a_bb:
-                hb_type = "hblb"
-            else:
-                hb_type = "hbls"
+            hb_type = "hblb" if a_bb else "hbls"
         elif a_lig:
-            if d_bb:
-                hb_type = "hblb"
-            else:
-                hb_type = "hbls"
+            hb_type = "hblb" if d_bb else "hbls"
         elif d_bb and a_bb:
             hb_type = "hbbb"
         elif not d_bb and not a_bb:
@@ -142,22 +148,20 @@ def compute_hydrogen_bonds(molid, frame, index_to_atom, sele1, sele2,
             water_dict[a_idx].add(d_idx)
 
     # Iterate over waters with hbonds and stratify water mediated interactions
-    for w_idx in water_dict:
+    for w_idx, value in water_dict.items():
         w_atom = index_to_atom[w_idx]
 
         # Iterate over all pairs of neighbors to w_atom
-        for n1, n2 in product(water_dict[w_idx], repeat=2):
+        for n1, n2 in product(value, repeat=2):
             n1_atom = index_to_atom[n1]
             n2_atom = index_to_atom[n2]
 
-            n1_solv = n1 in solvent_atoms  # n1_atom.resname in solvent_resn
             n2_solv = n2 in solvent_atoms  # n2_atom.resname in solvent_resn
 
-            # If n1 and n2 are both waters, ignore the pair
-            if n1_solv and n2_solv:
-                continue
+            if n1_solv := n1 in solvent_atoms:
+                if n2_solv:
+                    continue
 
-            if n1_solv:
                 n1, n2 = n2, n1
                 n1_solv, n2_solv = n2_solv, n1_solv
                 n1_atom, n2_atom = n2_atom, n1_atom
@@ -171,21 +175,17 @@ def compute_hydrogen_bonds(molid, frame, index_to_atom, sele1, sele2,
                     continue
 
                 for n2_n in water_dict[n2]:
-                    n2_n_atom = index_to_atom[n2_n]
                     # if n2_n_atom.resname not in solvent_resn:
                     if n2_n not in solvent_atoms:
                         # This neighbor of n2 is not a water, so check for extended bridge from n1
                         if not filter_dual_selection(sele1_atoms, sele2_atoms, n1, n2_n):
                             continue
+                        n2_n_atom = index_to_atom[n2_n]
                         if n1_atom.chain == n2_n_atom.chain and abs(n1_atom.resid - n2_n_atom.resid) < res_diff:
                             continue
 
                         n2_n_lig = n2_n_atom.index in ligand_indices  # n2_n_atom.resname in ligand_resn
-                        if n1_lig or n2_n_lig:
-                            hb_type = "lwb2"
-                        else:
-                            hb_type = "wb2"
-
+                        hb_type = "lwb2" if n1_lig or n2_n_lig else "wb2"
                         hbonds.append([frame, hb_type, n1_atom.get_label(), n2_n_atom.get_label(), w_atom.get_label(), n2_atom.get_label()])
             else:
                 # Both n1 and n2 are non solvent, so check for a regular water-bridge
@@ -196,11 +196,7 @@ def compute_hydrogen_bonds(molid, frame, index_to_atom, sele1, sele2,
 
                 n2_lig = n2_atom.index in ligand_indices  # n2_atom.resname in ligand_resn
 
-                if n1_lig or n2_lig:
-                    hb_type = "lwb"
-                else:
-                    hb_type = "wb"
-
+                hb_type = "lwb" if n1_lig or n2_lig else "wb"
                 hbonds.append([frame, hb_type, n1_atom.get_label(), n2_atom.get_label(), w_atom.get_label()])
 
     return hbonds
@@ -223,7 +219,7 @@ def extract_donor_acceptor(hbond_string):
     """
     atom_indices = [int(index) for index in int_pattern.findall(hbond_string)]
     third = len(atom_indices) // 3
-    return set(zip(atom_indices[0:third], atom_indices[third:third*2]))
+    return set(zip(atom_indices[:third], atom_indices[third:third*2]))
 
 
 def filter_dual_selection(sele1_atoms, sele2_atoms, idx1, idx2):

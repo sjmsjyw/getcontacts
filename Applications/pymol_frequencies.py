@@ -4,6 +4,7 @@
 exec pymol -q "$0" -- "$@"
 '''
 
+
 __doc__ = """
 Draws a structure and it's atomic interactions in pymol. Requires at least a structure file 
 and a contact-file as input. Additionally, a pymol selection can be provided as well.
@@ -22,8 +23,10 @@ import sys
 
 # Check cmd-line arguments
 if len(sys.argv) not in [3,4] or "pymol" not in sys.modules:
-    print("Usage: "+sys.argv[0]+" <structurefile> <contactfile> [selection]")
-    print("or:    pymol "+sys.argv[0]+" -- <structurefile> <contactfile> [selection]")
+    print(f"Usage: {sys.argv[0]} <structurefile> <contactfile> [selection]")
+    print(
+        f"or:    pymol {sys.argv[0]} -- <structurefile> <contactfile> [selection]"
+    )
     print(__doc__)
     sys.exit(1)
 
@@ -41,23 +44,22 @@ cmd.load(sys.argv[1])
 interaction_frames = defaultdict(set)
 total_frames = 0
 with open(sys.argv[2]) as cfile:
-    for line in cfile.readlines():
+    for line in cfile:
         line = line.strip()
         if not line:  # Ignore empty lines
             continue
 
         # Parse header
         if line[0] == "#":
-            total_frame_match = re.search(r'total_frames:(\d+)', line)
-            if total_frame_match:
-                total_frames = int(total_frame_match.group(1))
+            if total_frame_match := re.search(r'total_frames:(\d+)', line):
+                total_frames = int(total_frame_match[1])
             continue
 
         # Regex that matches a contact line and groups the frame number and the two first residues,
         frame_atom_match = re.match(r'^(\d+)\t.*?\t([^:]+:[^:]+:\d+:[^\s]+)\t([^:]+:[^:]+:\d+:[^\s]+)', line)
-        frame = int(frame_atom_match.group(1))
-        atom1 = frame_atom_match.group(2)
-        atom2 = frame_atom_match.group(3)
+        frame = int(frame_atom_match[1])
+        atom1 = frame_atom_match[2]
+        atom2 = frame_atom_match[3]
 
         if atom2 < atom1:
             atom1, atom2 = atom2, atom1
@@ -77,10 +79,12 @@ for (atom1, atom2), frames in interaction_frames.items():
     pmatom2 = "/".join(["","","",a2chain, a2resi, a2name])
     c1 = cmd.get_model(pmatom1).atom[0].coord
     c2 = cmd.get_model(pmatom2).atom[0].coord
-  
+
     # Check that either pmatom1 or pmatom2 are in the selection
-    if len(cmd.get_model(pmatom1 + " & "+selection).atom)==0 and \
-       len(cmd.get_model(pmatom2 + " & "+selection).atom)==0:
+    if (
+        len(cmd.get_model(f"{pmatom1} & {selection}").atom) == 0
+        and len(cmd.get_model(f"{pmatom2} & {selection}").atom) == 0
+    ):
         continue
 
     rad = frequency * 0.10 + 0.05

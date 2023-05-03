@@ -110,7 +110,7 @@ def featurize_contacts(residue_contacts, dimensions):
 
     for contact in residue_contacts:
         timestamp = contact[0]
-        key = "%s_%s" % (contact[1], contact[2])
+        key = f"{contact[1]}_{contact[2]}"
         if timestamp != curr_timestamp:  # new time
             curr_timestamp = timestamp
             sparse_cols.append(set())
@@ -122,8 +122,8 @@ def featurize_contacts(residue_contacts, dimensions):
         sparse_cols[-1].add(mapping[key])
 
     num_cols = len(mapping.keys())
+    rows = []
     if dimensions is None or num_cols <= dimensions:  # do not need to SVD
-        rows = []
         for indices in sparse_cols:
             # indices is a set
             row = [1.0 if i in indices else 0.0 for i in range(num_cols)]
@@ -132,7 +132,6 @@ def featurize_contacts(residue_contacts, dimensions):
     else:
         # need truncated SVD
         data = []
-        rows = []
         cols = []
         for i, indices in enumerate(sparse_cols):  # row
             for j in range(num_cols):  # col
@@ -189,7 +188,7 @@ def main(argv=None):
     if all(a is None for a in [args.tab_output, args.frequency_output]):
         parser.error("--tab_output or --frequency_output must be specified")
 
-    print("Reading atomic contacts from " + args.input_contacts.name)
+    print(f"Reading atomic contacts from {args.input_contacts.name}")
     atomic_contacts, num_frames = parse_contacts(args.input_contacts)
     args.input_contacts.close()
 
@@ -203,14 +202,18 @@ def main(argv=None):
     segmentation = run_ticc(time_matrix, cluster_number=args.clusters, beta=args.beta)
 
     if args.tab_output is not None:
-        print("Writing time-segments to " + args.tab_output)
+        print(f"Writing time-segments to {args.tab_output}")
         with open(args.tab_output, "w") as f:
             f.writelines(map(lambda l: str(int(l)) + "\n", segmentation[0][0]))
 
     if args.frequency_output is not None:
         k = segmentation[0][2][2]
         for c in range(k):
-            cluster_frames = set([frame for frame, cluster in enumerate(segmentation[0][0]) if cluster == c])
+            cluster_frames = {
+                frame
+                for frame, cluster in enumerate(segmentation[0][0])
+                if cluster == c
+            }
             cluster_contacts = [contact for contact in residue_contacts if contact[0] in cluster_frames]
             num_frames = len(cluster_frames)
 
@@ -218,7 +221,7 @@ def main(argv=None):
             total_frames, frequencies = gen_frequencies([(num_frames, counts)])
 
             fname = "%s_resfreq_cluster%03d.tsv" % (args.frequency_output, c)
-            print("Writing frequency-flare to " + fname)
+            print(f"Writing frequency-flare to {fname}")
             with open(fname, "w") as output_file:
                 output_file.write('#\ttotal_frames:%d\tinteraction_types:all\n' % total_frames)
                 output_file.write('#\tColumns:\tresidue_1,\tresidue_2\tframe_count\tcontact_frequency\n')

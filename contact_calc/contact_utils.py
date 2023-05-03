@@ -150,7 +150,9 @@ def get_atom_selection_indices(selection_id):
     GetContacts should perform all VMD based computation with just atom indices until needing to convert to labels with index_to_label
     """
 
-    return set(map(int, int_pattern.findall(evaltcl("$" + selection_id + " get index"))))
+    return set(
+        map(int, int_pattern.findall(evaltcl(f"${selection_id} get index")))
+    )
 
     # Old old
     # chains, resnames, resids, names, elements, indices = get_atom_selection_properties(selection_id)
@@ -198,13 +200,13 @@ def get_atom_selection_properties(selection_id):
         insertion code for each atom where present, and '' otherwise
         ['','','','','A','A','A','','','',...]
         """
-    chains   = safely_parsed_evaltcl("$%s get chain" % selection_id)
-    resnames = safely_parsed_evaltcl("$%s get resname" % selection_id)
-    resids   = safely_parsed_evaltcl("$%s get resid" % selection_id)
-    names    = safely_parsed_evaltcl("$%s get name" % selection_id)
-    elements = safely_parsed_evaltcl("$%s get element" % selection_id)
-    indices  = safely_parsed_evaltcl("$%s get index" % selection_id)
-    icodes   = safely_parsed_evaltcl("$%s get insertion" % selection_id)
+    chains = safely_parsed_evaltcl(f"${selection_id} get chain")
+    resnames = safely_parsed_evaltcl(f"${selection_id} get resname")
+    resids = safely_parsed_evaltcl(f"${selection_id} get resid")
+    names = safely_parsed_evaltcl(f"${selection_id} get name")
+    elements = safely_parsed_evaltcl(f"${selection_id} get element")
+    indices = safely_parsed_evaltcl(f"${selection_id} get index")
+    icodes = safely_parsed_evaltcl(f"${selection_id} get insertion")
     if icodes == [''] or chains == [''] or resnames == [''] or resids == [''] or names == [''] or indices == ['']:
         return [], [], [], [], [], []
     return chains, resnames, resids, names, elements, indices, icodes
@@ -252,7 +254,9 @@ def gen_index_to_atom(top, traj):
         # atom_label = "%s:%s:%s:%s:%s" % (chain, resname, resid, name, index)
         index_key = int(index)
         # index_to_atom[index_key] = atom_label
-        index_to_atom[index_key] = Atom(int(index_key), chain, resname, int(resid), name, element, icode=icode)
+        index_to_atom[index_key] = Atom(
+            index_key, chain, resname, int(resid), name, element, icode=icode
+        )
 
     molecule.delete(trajid)
     return index_to_atom
@@ -369,10 +373,10 @@ def calc_water_to_residues_map(water_hbonds, solvent_resn):
         if solvent_resn in atom1_label and solvent_resn in atom2_label:
             _solvent_bridges.append((atom1_label, atom2_label))
             continue
-        elif solvent_resn in atom1_label and solvent_resn not in atom2_label:
+        elif solvent_resn in atom1_label:
             water = atom1_label
             protein = atom2_label
-        elif solvent_resn not in atom1_label and solvent_resn in atom2_label:
+        elif solvent_resn in atom2_label:
             water = atom2_label
             protein = atom1_label
         else:
@@ -397,7 +401,7 @@ def find_disulfide(top, traj):
     """
     Find Cysteines making disulfide bridges and return their resids
     """
-    disulfide_pairs = list()
+    disulfide_pairs = []
     molid = load_traj(top, traj, 0, 1, 1)
     evaltcl("set cys_all [atomselect %s \" resname CYS  \" frame 0]" % molid)
     cys_all = set(evaltcl("$cys_all get resid").split())
@@ -442,7 +446,7 @@ def configure_solv(top, traj, solvent_sele):
             print("Detected %d solvent atoms (resnames %s) matching --solv '%s'" %
                   (len(solv_ids), " ".join(set(solv_resn)), solvent_sele))
         else:
-            print("Detected no solvent atoms matching --solv '%s'" % solvent_sele)
+            print(f"Detected no solvent atoms matching --solv '{solvent_sele}'")
         return solv_ids
     else:
         solv_resnames = set("H2O HH0 OHH HOH OH2 SOL WAT TIP TIP2 TIP3 TIP4 T3P IP3".split())
@@ -492,7 +496,7 @@ def configure_lipid(top, traj, lipid_sele):
             print("Detected %d lipid atoms (resnames %s) matching --lipid '%s'" %
                   (len(lipid_ids), " ".join(set(lipid_resn)), lipid_sele))
         else:
-            print("Detected no lipid atoms matching --lipid '%s'" % lipid_sele)
+            print(f"Detected no lipid atoms matching --lipid '{lipid_sele}'")
         return lipid_ids
     else:
         # If we need to expand default definition of lipids uncomment this line and add to this list
@@ -546,17 +550,15 @@ def configure_ligand(top, traj, ligand_sele, sele1, sele2):
             sys.exit(-1)
 
         evaltcl("set ligatoms [atomselect %s \" ligand \" frame 0]" % molid)
-        ligatoms = get_selection_indices(molid, 0, "ligand")
-
-        if ligatoms:
+        if ligatoms := get_selection_indices(molid, 0, "ligand"):
             print("Detected %d ligand atoms matching --ligand '%s'" % (len(ligatoms), ligand_sele))
 
             # Warn if there is no overlap between ligand and sele1 or sele2
-            ligatoms = get_selection_indices(molid, 0, "ligand and (%s or %s)" % (sele1, sele2))
+            ligatoms = get_selection_indices(molid, 0, f"ligand and ({sele1} or {sele2})")
             if not ligatoms:
                 print("Warning: None of the selected ligand atoms are in --sele or --sele2")
         else:
-            print("Detected no ligand atoms matching --ligand '%s'" % ligand_sele)
+            print(f"Detected no ligand atoms matching --ligand '{ligand_sele}'")
 
     else:
         evaltcl("atomselect macro ligand \"not (lipid or solv or protein or nucleic)\"")
@@ -568,7 +570,7 @@ def configure_ligand(top, traj, ligand_sele, sele1, sele2):
             print("Detected %d ligand atoms (resnames: %s)" % (len(ligatoms), ligand_resn))
 
             # Warn if there is no overlap between ligand and sele1 or sele2
-            ligatoms = get_selection_indices(molid, 0, "ligand and (%s or %s)" % (sele1, sele2))
+            ligatoms = get_selection_indices(molid, 0, f"ligand and ({sele1} or {sele2})")
             if not ligatoms:
                 print("Warning: No ligand atoms are in --sele or --sele2")
         else:
@@ -582,9 +584,9 @@ def is_sp3(molid, index_to_atom, atom1, atom2, atom3):
     atom1 = index_to_atom[atom1].get_label()
     atom2 = index_to_atom[atom2].get_label()
     atom3 = index_to_atom[atom3].get_label()
-    
+
     angle = compute_angle(molid, 0, atom1, atom2, atom3)
-    return (109.5 - 5) < angle and angle < (109.5 + 5)
+    return 109.5 - 5 < angle < 109.5 + 5
 
 def is_sp2(molid, index_to_atom, atom1, atom2, atom3):
     atom1 = index_to_atom[atom1].get_label()
@@ -592,15 +594,15 @@ def is_sp2(molid, index_to_atom, atom1, atom2, atom3):
     atom3 = index_to_atom[atom3].get_label()
 
     angle = compute_angle(molid, 0, atom1, atom2, atom3)
-    return (120. - 5) < angle and angle < (120. + 5)
+    return 120. - 5 < angle < 120. + 5
 
 def is_sp(molid, atom1, atom2, atom3):
     atom1 = index_to_atom[atom1].get_label()
     atom2 = index_to_atom[atom2].get_label()
     atom3 = index_to_atom[atom3].get_label()
-    
+
     angle = compute_angle(molid, 0, atom1, atom2, atom3)
-    return (180. - 5) < angle and angle < (180. + 5)
+    return 180. - 5 < angle < 180. + 5
 
 def extract_ligand_features(top, traj, index_to_atom):
     """
@@ -639,9 +641,12 @@ def extract_ligand_features(top, traj, index_to_atom):
 
     ''' Identify ligand cations/anions '''
     for atom_idx in ligand_indices:
-        neighbors = index_to_neighbors[atom_idx] if atom_idx in index_to_neighbors else []
+        neighbors = index_to_neighbors.get(atom_idx, [])
         ''' Check if the atom is a metal cation. I.E. one of the metal_cations names appears in its label. '''
-        if any([cation in index_to_atom[atom_idx].get_label() for cation in metal_cations]):
+        if any(
+            cation in index_to_atom[atom_idx].get_label()
+            for cation in metal_cations
+        ):
             ligand_cations += [atom_idx]
             continue
 
@@ -656,7 +661,10 @@ def extract_ligand_features(top, traj, index_to_atom):
             neighbor_elements = [index_to_atom[n_idx].element for n_idx in neighbors]
             from collections import Counter
             neighbor_elem_counts = Counter(neighbor_elements)
-            if not (neighbor_elem_counts['C'] == 1 and neighbor_elem_counts['O'] == 2):
+            if (
+                neighbor_elem_counts['C'] != 1
+                or neighbor_elem_counts['O'] != 2
+            ):
                 continue
             # It's a carboxylate (probably)! Add both O's to ligand_anions
             ligand_anions += [n_idx for n_idx in neighbors if index_to_atom[n_idx].element == 'O']
@@ -711,8 +719,12 @@ def compute_distance(molid, frame_idx, atom1_index, atom2_index):
     -------
     distance: float
     """
-    distance = float(evaltcl("measure bond {%s %s} molid %s frame %s" % (atom1_index, atom2_index, molid, frame_idx)))
-    return distance
+    return float(
+        evaltcl(
+            "measure bond {%s %s} molid %s frame %s"
+            % (atom1_index, atom2_index, molid, frame_idx)
+        )
+    )
 
 
 def compute_angle(molid, frame_idx, atom1, atom2, atom3):
@@ -741,9 +753,12 @@ def compute_angle(molid, frame_idx, atom1, atom2, atom3):
     atom_index2 = atom2.split(":")[-1]
     atom_index3 = atom3.split(":")[-1]
 
-    angle = float(evaltcl("measure angle {%s %s %s} molid %s frame %s" %
-                          (atom_index1, atom_index2, atom_index3, molid, frame_idx)))
-    return angle
+    return float(
+        evaltcl(
+            "measure angle {%s %s %s} molid %s frame %s"
+            % (atom_index1, atom_index2, atom_index3, molid, frame_idx)
+        )
+    )
 
 
 def get_chain(traj_frag_molid, frame_idx, index):
@@ -867,8 +882,7 @@ def get_atom_label(traj_frag_molid, frame_idx, index):
     resid = get_resid(traj_frag_molid, frame_idx, index)
     name = get_name(traj_frag_molid, frame_idx, index)
 
-    atom_label = "%s:%s:%s:%s:%s" % (chain, resname, resid, name, index)
-    return atom_label
+    return f"{chain}:{resname}:{resid}:{name}:{index}"
 
 
 # def parse_contacts(contact_string):
@@ -923,7 +937,7 @@ def parse_contacts(contact_string):
     """
     atom_indices = [int(index) for index in int_pattern.findall(contact_string)]
     half = len(atom_indices) // 2
-    return zip(atom_indices[0:half], atom_indices[half:])
+    return zip(atom_indices[:half], atom_indices[half:])
 
 
 # Geometry Tools
@@ -951,8 +965,7 @@ def get_coord(traj_frag_molid, frame_idx, atom_label):
     y = float(evaltcl("$sel get y"))
     z = float(evaltcl("$sel get z"))
     evaltcl("$sel delete")
-    coord = np.array([x, y, z])
-    return coord
+    return np.array([x, y, z])
 
 
 def points_to_vector(point1, point2):
@@ -980,8 +993,7 @@ def calc_angle_between_vectors(vector1, vector2):
     """
     radians_between_vectors = math.acos(np.dot(vector1, vector2) /
                                         (calc_vector_length(vector1) * calc_vector_length(vector2)))
-    angle_between_vectors = math.degrees(radians_between_vectors)
-    return angle_between_vectors
+    return math.degrees(radians_between_vectors)
 
 
 def calc_geom_distance(point1, point2):
@@ -999,8 +1011,7 @@ def calc_geom_distance(point1, point2):
     -------
     distance: float
     """
-    distance = np.linalg.norm(point1 - point2)
-    return distance
+    return np.linalg.norm(point1 - point2)
 
 
 def calc_geom_centroid(point1, point2, point3):
@@ -1020,8 +1031,7 @@ def calc_geom_centroid(point1, point2, point3):
     -------
     centroid: np.array[x, y, z]
     """
-    centroid = (point1 + point2 + point3)/3
-    return centroid
+    return (point1 + point2 + point3)/3
 
 
 def calc_geom_normal_vector(point1, point2, point3):
@@ -1035,8 +1045,7 @@ def calc_geom_normal_vector(point1, point2, point3):
     """
     v1 = point3 - point1
     v2 = point2 - point1
-    normal_vector = np.cross(v1, v2)
-    return normal_vector
+    return np.cross(v1, v2)
 
 
 def calc_geom_psi_angle(center1, center2, normal_vector):
