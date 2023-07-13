@@ -54,7 +54,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     contacts, total_frames = parse_contacts(args.input)
     bridges_only = args.bridges_only
-
+# aAAA
     # Build the bridge_neighbor datastructure which for each frame has a dictionary mapping bridging-residues to
     # non-bridging neighbors. Also collects contacts in `bridged_contacts` that are not part of any bridges unless
     # `bridges_only` has been enabled
