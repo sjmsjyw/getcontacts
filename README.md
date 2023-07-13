@@ -256,3 +256,6 @@ The code aims to be [PEP 8](http://pep8.org/) compliant, but pull-requests wont 
 When using GetContacts for publication, please cite: 
 
 ``https://getcontacts.github.io/``
+
+
+![Alt text](image.png)
