@@ -7,6 +7,7 @@ as output, represented by the CA atom (in case of amino acids) or the first atom
 
 """
 
+
 from collections import defaultdict
 
 
@@ -40,10 +41,10 @@ if __name__ == "__main__":
     # Build a dict mapping residue ids to a set of all its atom names
     representative_atoms = defaultdict(list)
     for c in contacts:
-        resi1 = c[2][0:c[2].rindex(":")]
+        resi1 = c[2][:c[2].rindex(":")]
         name1 = c[2][c[2].rindex(":")+1:]
         representative_atoms[resi1].append(name1)
-        resi2 = c[3][0:c[3].rindex(":")]
+        resi2 = c[3][:c[3].rindex(":")]
         name2 = c[3][c[3].rindex(":")+1:]
         representative_atoms[resi2].append(name2)
 
@@ -55,10 +56,10 @@ if __name__ == "__main__":
     for c in contacts:
         frame = str(c[0])
         itype = c[1]
-        resi1 = ":".join(c[2].split(":")[0:3])
-        resi2 = ":".join(c[3].split(":")[0:3])
-        atom1 = resi1 + ":" + representative_atoms[resi1]
-        atom2 = resi2 + ":" + representative_atoms[resi2]
+        resi1 = ":".join(c[2].split(":")[:3])
+        resi2 = ":".join(c[3].split(":")[:3])
+        atom1 = f"{resi1}:{representative_atoms[resi1]}"
+        atom2 = f"{resi2}:{representative_atoms[resi2]}"
         rescontacts.add((frame, itype, atom1, atom2))
 
     rescontacts = sorted(rescontacts, key=lambda contact: (int(contact[0]), contact[1]))
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     if args.output:
         args.output.write("\n".join(rescontacts))
         args.output.close()
-        print("Wrote residue contact file to " + args.output.name)
+        print(f"Wrote residue contact file to {args.output.name}")
     else:
         print("\n".join(rescontacts))
 

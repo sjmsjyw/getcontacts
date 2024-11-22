@@ -58,10 +58,10 @@ def compute_pi_cation(traj_frag_molid, frame, index_to_atom, sele1, sele2, geom_
     cutoff_distance = geom_criteria['PI_CATION_CUTOFF_DISTANCE']
     cutoff_angle = geom_criteria['PI_CATION_CUTOFF_ANGLE']
 
-    s1_aroms = "(%s or %s or %s or %s or %s) and (%s)" % (aromatic_phe, aromatic_trp, aromatic_tyr, aromatic_his, aromatic_nucl, sele1)
-    s2_aroms = "(%s or %s or %s or %s or %s) and (%s)" % (aromatic_phe, aromatic_trp, aromatic_tyr, aromatic_his, aromatic_nucl, sele2)
-    s1_cations = "(%s or %s or %s) and (%s)" % (basic_his, basic_lys, basic_arg, sele1)
-    s2_cations = "(%s or %s or %s) and (%s)" % (basic_his, basic_lys, basic_arg, sele2)
+    s1_aroms = f"({aromatic_phe} or {aromatic_trp} or {aromatic_tyr} or {aromatic_his} or {aromatic_nucl}) and ({sele1})"
+    s2_aroms = f"({aromatic_phe} or {aromatic_trp} or {aromatic_tyr} or {aromatic_his} or {aromatic_nucl}) and ({sele2})"
+    s1_cations = f"({basic_his} or {basic_lys} or {basic_arg}) and ({sele1})"
+    s2_cations = f"({basic_his} or {basic_lys} or {basic_arg}) and ({sele2})"
 
     evaltcl("set s1aroms [atomselect %s \" %s \" frame %s]" % (traj_frag_molid, s1_aroms, frame))
     evaltcl("set s2aroms [atomselect %s \" %s \" frame %s]" % (traj_frag_molid, s2_aroms, frame))
@@ -85,16 +85,17 @@ def compute_pi_cation(traj_frag_molid, frame, index_to_atom, sele1, sele2, geom_
         cation_label = index_to_atom[cation_index].get_label()
         aromatic_label = index_to_atom[aromatic_index].get_label()
         # print("PC", cation_label, aromatic_label)
-        pi_cation_aromatic_res_key = cation_label + ":" + ":".join(aromatic_label.split(":")[0:3])
+        pi_cation_aromatic_res_key = f"{cation_label}:" + ":".join(
+            aromatic_label.split(":")[:3]
+        )
         if pi_cation_aromatic_res_key not in pi_cation_aromatic_grouping:
             pi_cation_aromatic_grouping[pi_cation_aromatic_res_key] = set()
         pi_cation_aromatic_grouping[pi_cation_aromatic_res_key].add(aromatic_label)
 
     # Apply strict geometric criterion
     pi_cations = []
-    for pi_cation_aromatic_res_key in pi_cation_aromatic_grouping:
-        cation_atom_label = ":".join(pi_cation_aromatic_res_key.split(":")[0:5])
-        aromatic_atom_labels = pi_cation_aromatic_grouping[pi_cation_aromatic_res_key]
+    for pi_cation_aromatic_res_key, aromatic_atom_labels in pi_cation_aromatic_grouping.items():
+        cation_atom_label = ":".join(pi_cation_aromatic_res_key.split(":")[:5])
         if len(aromatic_atom_labels) != 3:
             continue
         aromatic_atom_labels = sorted(list(aromatic_atom_labels))

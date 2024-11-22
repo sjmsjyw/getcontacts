@@ -61,15 +61,13 @@ def write_json(flare, fstream):
 def is_single_flare(flare):
     if "frameDict" in flare:
         return False
-    if any([len(e["frames"] != 1 or e["frames"][0] != 0 for e in flare["edges"])]):
-        return False
-    return True
+    return not any(
+        [len(e["frames"] != 1 or e["frames"][0] != 0 for e in flare["edges"])]
+    )
 
 
 def is_time_flare(flare):
-    if "frameDict" in flare:
-        return False
-    return True
+    return "frameDict" not in flare
 
 
 def is_compare_flare(flare):
@@ -78,11 +76,10 @@ def is_compare_flare(flare):
 
     # Check that all frames correspond to a condition in the frameDict
     conditions = range(len(flare["frameDict"]))
-    for edge in flare["edges"]:
-        if any([f not in conditions for f in edge["frames"]]):
-            return False
-
-    return True
+    return not any(
+        any(f not in conditions for f in edge["frames"])
+        for edge in flare["edges"]
+    )
 
 
 def create_flare(contacts, resi_labels, resi_colors):
@@ -147,7 +144,9 @@ def create_flare(contacts, resi_labels, resi_colors):
         # Look up labels
         if resi_labels:
             if a1_key not in resi_labels or a2_key not in resi_labels:
-                print("create_flare: Omitting contact "+str(contact)+" as it doesn't appear in flare-label file")
+                print(
+                    f"create_flare: Omitting contact {str(contact)} as it doesn't appear in flare-label file"
+                )
                 continue
             a1_label = resi_labels[a1_key].split('.')[-1]
             a2_label = resi_labels[a2_key].split('.')[-1]
@@ -248,7 +247,7 @@ def compose_flares(singleflares, names):
     dict
         A multiflare object where the entries of the 'frameDict' correspond to the indicated names
     """
-    assert all([is_single_flare(f) for f in singleflares])
+    assert all(is_single_flare(f) for f in singleflares)
 
     ret = {
         "edges": [],
@@ -257,7 +256,7 @@ def compose_flares(singleflares, names):
 
     # Compose edges.
     def findedge(edge):
-        node_names = set([edge["name1"], edge["name2"]])
+        node_names = {edge["name1"], edge["name2"]}
         for e in ret["edges"]:
             if e["name1"] in node_names and e["name2"] in node_names:
                 return e
@@ -316,9 +315,9 @@ def compose_flares(singleflares, names):
                     elif existing_path != treepath:
                         fidx = singleflares.index(flare)
                         print("Can't compose conflicting tree-paths:")
-                        print("> "+existing_path)
-                        print("> "+treepath)
-                        print("> "+names[fidx])
+                        print(f"> {existing_path}")
+                        print(f"> {treepath}")
+                        print(f"> {names[fidx]}")
                         exit(1)
 
     # Compose tracks - currently adds all tracks

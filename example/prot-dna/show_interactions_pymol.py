@@ -11,15 +11,14 @@ cmd.load(struc)
 interaction_frames = defaultdict(set)
 total_frames = 0
 with open(conts) as cfile:
-    for line in cfile.readlines():
+    for line in cfile:
         line = line.strip()
         if not line:  # Ignore empty lines
             continue
 
         # Parse header
         if line[0] == "#":
-            total_frame_match = re.search(r'total_frames:(\d+)', line)
-            if total_frame_match:
+            if total_frame_match := re.search(r'total_frames:(\d+)', line):
                 total_frames = int(total_frame_match.group(1))
             continue
 
@@ -46,10 +45,12 @@ for (atom1, atom2), frames in interaction_frames.items():
     pmatom2 = "/".join(["","","",a2chain, a2resi, a2name])
     c1 = cmd.get_model(pmatom1).atom[0].coord
     c2 = cmd.get_model(pmatom2).atom[0].coord
-  
+
     # Check that either pmatom1 or pmatom2 are in the selection
-    if len(cmd.get_model(pmatom1 + " & "+selection).atom)==0 and \
-       len(cmd.get_model(pmatom2 + " & "+selection).atom)==0:
+    if (
+        len(cmd.get_model(f"{pmatom1} & {selection}").atom) == 0
+        and len(cmd.get_model(f"{pmatom2} & {selection}").atom) == 0
+    ):
         continue
 
     rad = 0.10 + 0.05

@@ -151,7 +151,7 @@ def res_contacts_xl(input_lines, itypes=None):
 
 
 def split_by_itype(contacts):
-    itypes = set([c[1] for c in contacts])
+    itypes = {c[1] for c in contacts}
     return {i: [c for c in contacts if c[1] == i] for i in itypes}
 
 
@@ -184,16 +184,18 @@ def multi_to_single_contact(contacts, min_frames):
         for contact in itype_contacts:
             atom1 = contact[2]
             atom2 = contact[3]
-            resi1 = ":".join(atom1.split(":")[0:3])
-            resi2 = ":".join(atom2.split(":")[0:3])
+            resi1 = ":".join(atom1.split(":")[:3])
+            resi2 = ":".join(atom2.split(":")[:3])
             if resi2 < resi1:
                 resi1, resi2 = resi2, resi1
                 atom1, atom2 = atom2, atom1
 
-            if counts[(resi1, resi2)] >= min_frames:
-                if (atom1, atom2) not in included_pairs:
-                    ret.append([0] + contact[1:])
-                    included_pairs.add((atom1, atom2))
+            if (
+                counts[(resi1, resi2)] >= min_frames
+                and (atom1, atom2) not in included_pairs
+            ):
+                ret.append([0] + contact[1:])
+                included_pairs.add((atom1, atom2))
 
     return ret
 
@@ -247,9 +249,13 @@ def parse_residuelabels(label_file):
         flarelabel = flaretreepath.split(".")[-1]
         flarecolor = columns[2] if len(columns) > 2 else "white"
         if residentifier in ret:
-            raise AssertionError("Residue identifier '"+residentifier+"' appears twice in "+label_file.name)
+            raise AssertionError(
+                f"Residue identifier '{residentifier}' appears twice in {label_file.name}"
+            )
         if flarelabel in flarelabels:
-            raise AssertionError("Flare label '"+flarelabel+"' used twice in "+label_file.name)
+            raise AssertionError(
+                f"Flare label '{flarelabel}' used twice in {label_file.name}"
+            )
 
         # ret[residentifier] = {"label": flarelabel, "treepath": flaretreepath, "color": flarecolor}
         ret[0][residentifier] = flaretreepath
@@ -290,17 +296,15 @@ def res_contacts(contacts):
 
     for atom_contact in contacts:
         frame = atom_contact[0]
-        resi1 = ":".join(atom_contact[2].split(":")[0:3])
-        resi2 = ":".join(atom_contact[3].split(":")[0:3])
+        resi1 = ":".join(atom_contact[2].split(":")[:3])
+        resi2 = ":".join(atom_contact[3].split(":")[:3])
         if resi2 < resi1:
             resi1, resi2 = resi2, resi1
         frame_dict[frame].add((resi1, resi2))
 
     ret = []
     for frame in sorted(frame_dict):
-        for resi1, resi2 in frame_dict[frame]:
-            ret.append([frame, resi1, resi2])
-
+        ret.extend([frame, resi1, resi2] for resi1, resi2 in frame_dict[frame])
     return ret
 
 
@@ -344,7 +348,7 @@ def parse_frequencyfiles(freq_files, freq_cutoff):
             except ValueError:
                 raise ParseError("Third column in frequency file must be float")
 
-            if not (res1, res2) in ret:
+            if (res1, res2) not in ret:
                 ret[(res1, res2)] = np.zeros(columns)
 
             ret[(res1, res2)][fidx] = freq
@@ -466,8 +470,10 @@ def gen_counts(residue_contacts):
     for frame, res1, res2 in residue_contacts:
         rescontact_frames[(res1, res2)].add(frame)
 
-    rescontact_counts = {(res1, res2): len(frames) for (res1, res2), frames in rescontact_frames.items()}
-    return rescontact_counts
+    return {
+        (res1, res2): len(frames)
+        for (res1, res2), frames in rescontact_frames.items()
+    }
 
 
 def gen_counts_old(input_lines, interaction_types=None, residuelabels=None):
@@ -507,8 +513,9 @@ def gen_counts_old(input_lines, interaction_types=None, residuelabels=None):
     from collections import defaultdict
 
     def atomid_to_resid(atom):
-        return atom[0:atom.rfind(":")]
-        # return ':'.join(atom.split(':')[1:3])
+        return atom[:atom.rfind(":")]
+            # return ':'.join(atom.split(':')[1:3])
+
 
     # Maps residue pairs to set of frames in which they're present
     rescontact_frames = defaultdict(set)

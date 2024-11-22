@@ -44,10 +44,9 @@ def get_edge_weight(graph, node1, node2):
         interaction frequency between two residues
     """
     try:
-        freq = graph[node1][node2]
-        return freq
+        return graph[node1][node2]
     except KeyError:
-        print("Key Error: Edge between %s -- %s doesn't exist" % (node1, node2))
+        print(f"Key Error: Edge between {node1} -- {node2} doesn't exist")
 
 
 def create_graph(contact_frequency):
@@ -70,7 +69,7 @@ def create_graph(contact_frequency):
     with open(contact_frequency, 'r') as f:
         nodes, edges = set(), set()
         for line in f:
-            if not line[0] == "#":
+            if line[0] != "#":
                 linfo = line.strip().split("\t")
                 res1 = linfo[0]
                 res2 = linfo[1]
@@ -111,7 +110,7 @@ def betweenness_centrality_dist(graph, plot=False):
     bc = nx.betweenness_centrality(graph)
     centrality_values = []
     for key, value in reversed(sorted(bc.items(), key=lambda item: (item[1], item[0]))):
-        print("%s: %s" % (key, value))
+        print(f"{key}: {value}")
         centrality_values += [value]
     if plot:
         sns.distplot(centrality_values)
@@ -141,7 +140,7 @@ def degree_centrality_dist(graph, plot=False):
     dc = nx.degree_centrality(graph)
     centrality_values = []
     for key, value in reversed(sorted(dc.items(), key=lambda item: (item[1], item[0]))):
-        print("%s: %s" % (key, value))
+        print(f"{key}: {value}")
         centrality_values += [value]
     if plot:
         sns.distplot(centrality_values)
@@ -187,5 +186,4 @@ def communication_pathway(graph, src_nodes, dest_nodes=[], draw=False):
                 sp = nx.shortest_path(graph, src, dest)
                 for idx in range(len(sp) - 1):
                     sp_edges.add((sp[idx], sp[idx + 1]))
-    sp_edges = list(sp_edges)
-    return sp_edges
+    return list(sp_edges)

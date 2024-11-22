@@ -19,12 +19,12 @@ class TestGetContactFingerprints(unittest.TestCase):
             self.assertTrue(os.path.exists(input_output[1]))
 
         resfreq_file_12 = "tests/5xnd_resfreq_12.tsv"
-        args = "--input_files tests/5xnd_01_contacts.tsv tests/5xnd_02_contacts.tsv --output_file " + resfreq_file_12
+        args = f"--input_files tests/5xnd_01_contacts.tsv tests/5xnd_02_contacts.tsv --output_file {resfreq_file_12}"
         get_contact_frequencies.main(argv=args.split(" "))
         self.assertTrue(os.path.exists(resfreq_file_12))
 
         resfreq_file_34 = "tests/5xnd_resfreq_34.tsv"
-        args = "--input_files tests/5xnd_03_contacts.tsv tests/5xnd_04_contacts.tsv --output_file " + resfreq_file_34
+        args = f"--input_files tests/5xnd_03_contacts.tsv tests/5xnd_04_contacts.tsv --output_file {resfreq_file_34}"
         get_contact_frequencies.main(argv=args.split(" "))
         self.assertTrue(os.path.exists(resfreq_file_12))
 
@@ -34,7 +34,7 @@ class TestGetContactFingerprints(unittest.TestCase):
             "tests/5xnd_fingerprint_flare.json"
         )
         args = "--input_frequencies %s %s --table_output %s --plot_output %s --flare_output %s" % \
-               ((resfreq_file_12, resfreq_file_34) + fingerprint_files)
+                   ((resfreq_file_12, resfreq_file_34) + fingerprint_files)
         get_contact_fingerprints.main(argv=args.split(" "))
         for output_file in fingerprint_files:
             self.assertTrue(os.path.exists(output_file))

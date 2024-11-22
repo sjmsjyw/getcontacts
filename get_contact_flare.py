@@ -85,7 +85,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.output:
-        print("Parsing contact types %s from %s" % (str(args.itypes), args.input.name))
+        print(f"Parsing contact types {str(args.itypes)} from {args.input.name}")
 
     # Read contacts and generate graph
     itypes = parse_itypes(args.itypes)
@@ -99,7 +99,7 @@ def main(argv=None):
     # Write output
     if args.output:
         write_json(graph, args.output)
-        print("Done. Wrote flare-json to %s" % args.output)
+        print(f"Done. Wrote flare-json to {args.output}")
     else:
         write_json(graph, sys.stdout)
 
@@ -107,8 +107,24 @@ def main(argv=None):
 def parse_itypes(itypes):
     """Parses the itype argument and returns a set of strings with all the selected interaction types """
     if "all" in itypes:
-        return set(["sb", "pc", "ps", "ts", "vdw", "hb", "lhb", "hbbb", "hbsb", "hbss", "wb", "wb2", "hbls", "hblb",
-                    "lwb", "lwb2"])
+        return {
+            "sb",
+            "pc",
+            "ps",
+            "ts",
+            "vdw",
+            "hb",
+            "lhb",
+            "hbbb",
+            "hbsb",
+            "hbss",
+            "wb",
+            "wb2",
+            "hbls",
+            "hblb",
+            "lwb",
+            "lwb2",
+        }
     return set(itypes)
 
 

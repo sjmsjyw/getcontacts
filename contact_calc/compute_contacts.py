@@ -273,8 +273,6 @@ def compute_contacts(top, traj, output, itypes, geom_criterion_values, cores,
         resultsqueue.put("DONE")
         output_fd = open(output, "w")
         contact_consumer(resultsqueue, output_fd, itypes, beg, end, stride, distout)
-        output_fd.close()
-
     else:
         workers = [Process(target=contact_worker, args=(inputqueue, resultsqueue)) for _ in range(num_workers)]
         for w in workers:
@@ -290,7 +288,8 @@ def compute_contacts(top, traj, output, itypes, geom_criterion_values, cores,
             w.join()
         resultsqueue.put("DONE")
         consumer.join()
-        output_fd.close()
+
+    output_fd.close()
 
 
 def contact_worker(inputqueue, resultsqueue):
@@ -338,7 +337,7 @@ def contact_consumer(resultsqueue, output_fd, itypes, beg, end, stride, distout)
             for interaction in contacts:
                 for a in range(2, len(interaction) - 1 if distout else len(interaction)):
                     atom_str = interaction[a]
-                    interaction[a] = atom_str[0:atom_str.rfind(":")]
+                    interaction[a] = atom_str[:atom_str.rfind(":")]
 
                 # Sort atom 1 and 2 lexicographically
                 if interaction[3] < interaction[2]:

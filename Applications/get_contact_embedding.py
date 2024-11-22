@@ -72,7 +72,7 @@ def main(argv=None):
     contact_dict = defaultdict(set)
 
     for resi_contact in residue_contacts:
-        contact_dict[resi_contact[1]+"-"+resi_contact[2]].add(resi_contact[0])
+        contact_dict[f"{resi_contact[1]}-{resi_contact[2]}"].add(resi_contact[0])
 
     for frame in range(num_frames):
         embedding = ["1" if frame in contact_frames else "0" for _, contact_frames in contact_dict.items()]

@@ -14,7 +14,7 @@ from contact_calc.transformations import parse_frequencyfiles
 
 
 def write_frequencytable(freq_table, col_labels, fname, cluster_columns=True, cluster_rows=True):
-    row_labels = [(r1, r2) for r1, r2 in freq_table]
+    row_labels = list(freq_table)
     freq_matrix = np.array([freq_table[(r1, r2)] for (r1, r2) in freq_table])
     m, n = freq_matrix.shape
     if cluster_rows:
@@ -81,16 +81,14 @@ def plot_frequencies(freq_table, col_labels, out_file, cluster_columns):
     import pandas as pd
     import matplotlib
     import os
-    # if "DISPLAY" not in os.environ:
-        # matplotlib.use('agg')
     matplotlib.use('Agg')
 
-    import seaborn as sns; 
+    import seaborn as sns;
     sns.set(color_codes=True)
     sns.set(font_scale=1.5)
 
     freq_matrix = np.array([freq_table[(r1, r2)] for (r1, r2) in freq_table])
-    row_labels = [r1 + " - " + r2 for (r1, r2) in freq_table]
+    row_labels = [f"{r1} - {r2}" for (r1, r2) in freq_table]
     pdframe = pd.DataFrame(freq_matrix, index=row_labels, columns=col_labels)
 
     # Scale down figsize if too large
@@ -177,21 +175,21 @@ def main(argv=None):
 
     if args.table_output is not None:
         write_frequencytable(freq_table, column_headers, args.table_output, args.cluster_columns, True)
-        print("Wrote frequency table to "+args.table_output)
+        print(f"Wrote frequency table to {args.table_output}")
 
     if args.flare_output is not None:
         compare_flare = compose_frequencytable(freq_table, column_headers, args.frequency_cutoff)
         write_json(compare_flare, args.flare_output)
-        print("Wrote multi flare to "+args.flare_output)
+        print(f"Wrote multi flare to {args.flare_output}")
 
     if args.plot_output is not None:
         plot_frequencies(freq_table, column_headers, args.plot_output, args.cluster_columns)
-        print("Wrote fingerprint heatmap to "+args.plot_output)
+        print(f"Wrote fingerprint heatmap to {args.plot_output}")
 
     if args.pymol_output is not None:
         compare_flare = compose_frequencytable(freq_table, column_headers, args.frequency_cutoff)
         write_pymol_distances(compare_flare, args.pymol_output)
-        print("Wrote pymol file to "+args.pymol_output)
+        print(f"Wrote pymol file to {args.pymol_output}")
 
     for f in args.input_frequencies:
         f.close()

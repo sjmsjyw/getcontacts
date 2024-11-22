@@ -60,14 +60,18 @@ def compute_salt_bridges(traj_frag_molid, frame, index_to_atom, sele1, sele2, ge
     ligand_indices = get_selection_indices(traj_frag_molid, frame, "ligand")
     ligand_anions_string, ligand_cations_string = "", ""
     if len(ligand_anions) > 0:
-        ligand_anions_string = "or (index {})".format(' '.join([str(idx) for idx in ligand_anions]))
+        ligand_anions_string = (
+            f"or (index {' '.join([str(idx) for idx in ligand_anions])})"
+        )
     if len(ligand_cations) > 0:
-        ligand_cations_string = "or (index {})".format(' '.join([str(idx) for idx in ligand_cations]))
+        ligand_cations_string = (
+            f"or (index {' '.join([str(idx) for idx in ligand_cations])})"
+        )
 
-    s1_anions = "(%s or %s or %s %s) and (%s)" % (acidic_asp, acidic_glu, acidic_nucl, ligand_anions_string, sele1)
-    s2_anions = "(%s or %s or %s %s) and (%s)" % (acidic_asp, acidic_glu, acidic_nucl, ligand_anions_string, sele2)
-    s1_cations = "(%s or %s or %s %s) and (%s)" % (basic_his, basic_lys, basic_arg, ligand_cations_string, sele1)
-    s2_cations = "(%s or %s or %s %s) and (%s)" % (basic_his, basic_lys, basic_arg, ligand_cations_string, sele2)
+    s1_anions = f"({acidic_asp} or {acidic_glu} or {acidic_nucl} {ligand_anions_string}) and ({sele1})"
+    s2_anions = f"({acidic_asp} or {acidic_glu} or {acidic_nucl} {ligand_anions_string}) and ({sele2})"
+    s1_cations = f"({basic_his} or {basic_lys} or {basic_arg} {ligand_cations_string}) and ({sele1})"
+    s2_cations = f"({basic_his} or {basic_lys} or {basic_arg} {ligand_cations_string}) and ({sele2})"
 
     evaltcl("set s1anions [atomselect %s \" %s \" frame %s]" % (traj_frag_molid, s1_anions, frame))
     evaltcl("set s2anions [atomselect %s \" %s \" frame %s]" % (traj_frag_molid, s2_anions, frame))

@@ -52,6 +52,7 @@ def build_dist_matrix(contact_sets):
 
 def main():
     # Parse command line arguments
+
     class MyParser(argparse.ArgumentParser):
         def error(self, message):
             # Prints full program help when error occurs
@@ -101,7 +102,7 @@ def main():
     dendrogram(linkage_matrix, labels=args.column_headers)
     plt.tight_layout()
     plt.savefig(args.dendrogram_output)
-    print("Done, dendrogram SVG saved to "+args.dendrogram_output)
+    print(f"Done, dendrogram SVG saved to {args.dendrogram_output}")
 
 
 if __name__ == '__main__':

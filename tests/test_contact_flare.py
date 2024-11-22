@@ -17,8 +17,9 @@ class TestGetContactFlare(unittest.TestCase):
         self.assertTrue(os.path.exists(contact_file))
 
         flare_file = "tests/5xnd_timeflare.json"
-        argv = ("--input " + contact_file + " "
-                "--output " + flare_file).split(" ")
+        argv = (
+            ((f"--input {contact_file}" + " " "--output ") + flare_file)
+        ).split(" ")
         get_contact_flare.main(argv=argv)
 
         self.assertTrue(os.path.exists(flare_file))

@@ -23,10 +23,10 @@ __all__ = ["compute_vanderwaals"]
 
 def update_soft_cutoff(traj_frag_molid, index_to_atom, sele1, sele2, epsilon, geom_criteria):
     # global SOFT_VDW_CUTOFF
-    ids1 = get_selection_indices(traj_frag_molid, 0, "%s" % sele1)
-    ids2 = get_selection_indices(traj_frag_molid, 0, "%s" % sele2)
-    max_vdw1 = max([index_to_atom[i].vdwradius for i in ids1])
-    max_vdw2 = max([index_to_atom[i].vdwradius for i in ids2])
+    ids1 = get_selection_indices(traj_frag_molid, 0, f"{sele1}")
+    ids2 = get_selection_indices(traj_frag_molid, 0, f"{sele2}")
+    max_vdw1 = max(index_to_atom[i].vdwradius for i in ids1)
+    max_vdw2 = max(index_to_atom[i].vdwradius for i in ids2)
     # SOFT_VDW_CUTOFF = max_vdw1 + max_vdw2 + epsilon
     geom_criteria['soft_vdw_cutoff'] = max_vdw1 + max_vdw2 + epsilon
 
@@ -68,7 +68,9 @@ def compute_vanderwaals(traj_frag_molid, frame, index_to_atom, sele1, sele2, geo
 
     evaltcl("set vdw_atoms1 [atomselect %s \" noh and (%s)\" frame %s]" % (traj_frag_molid, sele1, frame))
     evaltcl("set vdw_atoms2 [atomselect %s \" noh and (%s)\" frame %s]" % (traj_frag_molid, sele2, frame))
-    contact_pairs = parse_contacts(evaltcl("measure contacts %s $vdw_atoms1 $vdw_atoms2" % soft_vdw_cutoff))
+    contact_pairs = parse_contacts(
+        evaltcl(f"measure contacts {soft_vdw_cutoff} $vdw_atoms1 $vdw_atoms2")
+    )
     evaltcl("$vdw_atoms1 delete")
     evaltcl("$vdw_atoms2 delete")
 
@@ -82,9 +84,11 @@ def compute_vanderwaals(traj_frag_molid, frame, index_to_atom, sele1, sele2, geo
             continue
 
         #Check and continue if disulphide bond
-        if atom1.resname == atom2.resname == "CYS":
-            if set((atom1.resid, atom2.resid)) in disulfide_cys:
-                continue
+        if (
+            atom1.resname == atom2.resname == "CYS"
+            and {atom1.resid, atom2.resid} in disulfide_cys
+        ):
+            continue
 
         # Perform distance cutoff with atom indices
         distance = compute_distance(traj_frag_molid, frame, atom1_index, atom2_index)

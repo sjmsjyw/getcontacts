@@ -112,7 +112,7 @@ def main(argv=None):
 def parse_interaction_patterns(ipatterns, contact_lists):
     ip_str_pairs = [ip.split() for ip in ipatterns]
 
-    if any([len(ip) not in [1, 2] for ip in ip_str_pairs]):
+    if any(len(ip) not in [1, 2] for ip in ip_str_pairs):
         sys.stderr.write("Error: Interactions must be valid space-separated regular expressions\n")
         sys.exit(-1)
 
@@ -148,7 +148,10 @@ def parse_labels(labels, input_files, interactions):
 
     from itertools import product
 
-    return [i[0].pattern + " - " + i[1].pattern for i, _ in product(interactions, input_files)]
+    return [
+        f"{i[0].pattern} - {i[1].pattern}"
+        for i, _ in product(interactions, input_files)
+    ]
 
 
 def parse_itypes(itype_argument):
@@ -168,10 +171,10 @@ def filter_contacts(contact_lists, interaction_patterns):
 
             ip_contact_frames = set()
             for c in contacts:
-                frame = c[0]
                 atom0 = c[2]
                 atom1 = c[3]
                 if (ip0.match(atom0) and ip1.match(atom1)) or (ip0.match(atom1) and ip1.match(atom0)):
+                    frame = c[0]
                     ip_contact_frames.add(frame)
 
             ret.append(sorted(list(ip_contact_frames)))

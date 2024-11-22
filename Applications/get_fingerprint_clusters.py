@@ -57,7 +57,7 @@ if __name__ == "__main__":
                           help='The name of the output ')
 
     args = parser.parse_args()
-    print("Parsing table from " + args.table_input.name)
+    print(f"Parsing table from {args.table_input.name}")
     rows, cols, freqs = parse_table(args.table_input.readlines())
 
     freq_matrix = np.matrix(freqs)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     print(cluster_freq_matrix)
 
-    print("Writing to " + args.pymol_output)
+    print(f"Writing to {args.pymol_output}")
     if args.pymol_output:
         for cluster in col_clusters:
             cols_in_cluster = [cols[i] for i in range(n) if col_cluster_assignments[i] == cluster]
@@ -103,8 +103,8 @@ if __name__ == "__main__":
                     rows_in_cluster = [rows[i] for i in range(m) if row_cluster_assignments[i] == row_cluster]
                     object_name = "cluster_%d_freq_%.3f" % (row_cluster, cluster_freq_matrix[row_cluster, cluster])
                     for row in rows_in_cluster:
-                        resi1 = "chain %s & resi %s & name CA+C1'" % (row[0].split(":")[0], row[0].split(":")[2])
-                        resi2 = "chain %s & resi %s & name CA+C1'" % (row[1].split(":")[0], row[1].split(":")[2])
+                        resi1 = f"""chain {row[0].split(":")[0]} & resi {row[0].split(":")[2]} & name CA+C1'"""
+                        resi2 = f"""chain {row[1].split(":")[0]} & resi {row[1].split(":")[2]} & name CA+C1'"""
                         outfile.write("distance %s, %s, %s\n" % (object_name, resi1, resi2))
                 outfile.write("\n")
 

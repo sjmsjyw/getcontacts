@@ -36,7 +36,6 @@ def process_geometric_criterion_args(args):
         "VDW_EPSILON": args.vdw_epsilon,
         "VDW_RES_DIFF": args.vdw_res_diff
     }
-    return geom_criterion_values
 
 
 def main(argv=None):
@@ -70,7 +69,7 @@ def main(argv=None):
     else:
         for itype in args.itypes:
             if itype not in all_itypes:
-                parser.error(itype + " is not a valid interaction type")
+                parser.error(f"{itype} is not a valid interaction type")
 
         itypes = args.itypes
 
@@ -81,12 +80,12 @@ def main(argv=None):
     toc = datetime.datetime.now()
     print("\nTotal computation time: " + str((toc-tic).total_seconds()) + " seconds")
 
-    print("topology=%s" % top)
-    print("trajectory=%s" % traj)
-    print("output=%s" % output)
-    print("solv=%s" % solv)
-    print("sele=%s" % sele1)
-    print("sele2=%s" % sele2)
+    print(f"topology={top}")
+    print(f"trajectory={traj}")
+    print(f"output={output}")
+    print(f"solv={solv}")
+    print(f"sele={sele1}")
+    print(f"sele2={sele2}")
 
 
 if __name__ == "__main__":

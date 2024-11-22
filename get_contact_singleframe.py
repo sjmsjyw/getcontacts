@@ -43,7 +43,7 @@ if __name__ == "__main__":
     if args.output:
         args.output.write("\n".join(contacts))
         args.output.close()
-        print("Wrote residue contact file to " + args.output.name)
+        print(f"Wrote residue contact file to {args.output.name}")
     else:
         print("\n".join(contacts))
 
